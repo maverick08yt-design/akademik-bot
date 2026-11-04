@@ -9,7 +9,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
 BOT_TOKEN = "9247009785:AAEjDMvqTF9-ibXkUahTRj_5d4k7LFnQ7JQ"
-MINI_APP_URL = "https://frontend-frzci9py5-maverick-0331.vercel.app"
+MINI_APP_URL = "https://frontend-ixvn4fcqp-maverick-0331.vercel.app"
 
 # ==============================================================
 # BU YERGA TELEGRAM ID RAQAMINGIZNI YOZING:
