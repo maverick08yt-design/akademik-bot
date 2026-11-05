@@ -10,7 +10,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
 BOT_TOKEN = "9247009785:AAEjDMvqTF9-ibXkUahTRj_5d4k7LFnQ7JQ"
 # Vercel havolangiz:
-MINI_APP_URL = "https://frontend-nlqlb7sq2-maverick-0331.vercel.app"
+MINI_APP_URL = "https://frontend-maverick-0331.vercel.app"
 
 # ==============================================================
 # BU YERGA O'ZINGIZNING TELEGRAM ID RAQAMINGIZNI YOZING:
