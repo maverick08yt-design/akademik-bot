@@ -14,7 +14,7 @@ BOT_TOKEN = "9247009785:AAEjDMvqTF9-ibXkUahTRj_5d4k7LFnQ7JQ"
 ADMIN_TELEGRAM_ID = 7636659881  # Masalan: 564738291
 
 # 2. VERCEL ASOSIY HAVOLASI:
-MINI_APP_URL = "https://frontend-maverick-0331.vercel.app"
+MINI_APP_URL = "https://frontend-nlqlb7sq2-maverick-0331.vercel.app"
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
