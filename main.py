@@ -9,10 +9,11 @@ from aiogram.filters import CommandStart
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
 BOT_TOKEN = "9247009785:AAEjDMvqTF9-ibXkUahTRj_5d4k7LFnQ7JQ"
+# Vercel havolangiz:
 MINI_APP_URL = "https://frontend-ixvn4fcqp-maverick-0331.vercel.app"
 
 # ==============================================================
-# BU YERGA TELEGRAM ID RAQAMINGIZNI YOZING:
+# BU YERGA O'ZINGIZNING TELEGRAM ID RAQAMINGIZNI YOZING:
 ADMIN_TELEGRAM_ID = 7636659881  # Masalan: 564738291
 # ==============================================================
 
@@ -26,8 +27,7 @@ def get_db():
 
 def init_db():
     conn = get_db()
-    c = conn.cursor()
-    c.execute("""
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS registrations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             full_name TEXT,
@@ -65,7 +65,7 @@ async def start_bot():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    print("⚡ Bot va Baza 24/7 ishga tushdi...")
+    print("⚡ Bot va Baza 24/7 serverda ishga tushdi...")
     polling_task = asyncio.create_task(start_bot())
     yield
     polling_task.cancel()
@@ -94,10 +94,10 @@ async def register_lead(reg: RegisterModel):
     conn.commit()
     conn.close()
 
-    # Adminga shaxsiy xabar yuborish
+    # Adminga Telegramdan to'g'ridan-to'g'ri xabar boradi
     msg = (
         f"🔔 YANGI ARIZA KELIB TUSHDI!\n\n"
-        f"👤 Ism: {reg.full_name}\n"
+        f"👤 O'quvchi: {reg.full_name}\n"
         f"📞 Tel: {reg.phone}\n"
         f"✉️ Email: {reg.email or 'Kiritilmagan'}\n"
         f"📚 Kurs: {reg.course or 'Umumiy'}\n"
@@ -110,9 +110,9 @@ async def register_lead(reg: RegisterModel):
 
     return {"status": "ok"}
 
-# ADMIN UCHUN BARCHA ARIZALAR RO'YXATI
+# FAQAT ADMIN UCHUN BARCHA ARIZALARNI BERISH
 @app.get("/api/admin/registrations")
-def get_leads():
+def get_all_leads():
     conn = get_db()
     leads = [dict(row) for row in conn.execute("SELECT * FROM registrations ORDER BY id DESC").fetchall()]
     conn.close()
