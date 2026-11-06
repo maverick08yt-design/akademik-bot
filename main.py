@@ -4,22 +4,21 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from aiogram import Bot, Dispatcher, types, F
+from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart, Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
 BOT_TOKEN = "9247009785:AAEjDMvqTF9-ibXkUahTRj_5d4k7LFnQ7JQ"
 
-# 1. TELEGRAM ID RAQAMINGIZNI YOZING:
-ADMIN_TELEGRAM_ID = 7636659881  # Masalan: 564738291
+# SIZNING ANIQ TELEGRAM ID RAQAMINGIZ:
+ADMIN_TELEGRAM_ID = 7636659881
 
-# 2. VERCEL ASOSIY HAVOLASI:
-MINI_APP_URL = "https://frontend-nlqlb7sq2-maverick-0331.vercel.app"
+# Vercel havolangiz:
+MINI_APP_URL = "https://frontend-8p948oybp-maverick-0331.vercel.app"
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-# --- BAZA BILAN ISHLASH ---
 def get_db():
     conn = sqlite3.connect("academy.db")
     conn.row_factory = sqlite3.Row
@@ -40,54 +39,51 @@ def init_db():
     conn.commit()
     conn.close()
 
-# --- BOT BUYRUQLARI ---
-
-# 1. /start - Oddiy foydalanuvchilar uchun
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message):
     keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="🎓 Akademiya Ilovasini Ochish", web_app=WebAppInfo(url=MINI_APP_URL))]]
+        inline_keyboard=[[InlineKeyboardButton(text="Akademiya Ilovasini Ochish", web_app=WebAppInfo(url=MINI_APP_URL))]]
     )
     await message.answer(
-        f"Salom, {message.from_user.first_name}! 👋\n\n"
+        f"Assalomu alaykum, {message.from_user.first_name}!\n\n"
         "O'quv markazimizning rasmiy platformasiga xush kelibsiz.\n"
-        "Kurslarimiz va natijalar bilan tanishish uchun quyidagi tugmani bosing:",
+        "Kurslar bilan tanishish uchun quyidagi tugmani bosing:",
         reply_markup=keyboard
     )
 
-# 2. /admin - Faqat siz uchun maxsus boshqaruv
+# Faqat ID: 7636659881 yozgandagina ishlaydi:
 @dp.message(Command("admin"))
 async def cmd_admin(message: types.Message):
     if message.from_user.id != ADMIN_TELEGRAM_ID:
-        await message.answer("❌ Bu buyruq faqat markaz administratori uchun!")
         return
 
     conn = get_db()
-    leads = conn.execute("SELECT * FROM leads ORDER BY id DESC LIMIT 10").fetchall()
+    leads = conn.execute("SELECT * FROM leads ORDER BY id DESC LIMIT 15").fetchall()
     conn.close()
 
     if not leads:
-        await message.answer("📭 Hozircha yangi arizalar yo'q.")
+        await message.answer("Hozircha arizalar mavjud emas.")
         return
 
-    text = f"⚙️ <b>OXIRGI ARIZALAR ({len(leads)} ta):</b>\n\n"
+    text = f"<b>Kelib tushgan arizalar ({len(leads)} ta):</b>\n\n"
     for l in leads:
         text += (
-            f"🆔 #{l['id']} | 📅 {l['created_at'][:16]}\n"
-            f"👤 <b>{l['full_name']}</b>\n"
-            f"📞 <code>{l['phone']}</code>\n"
-            f"📚 Kurs: {l['course'] or 'Umumiy'}\n"
+            f"ID #{l['id']} | {l['created_at'][:16]}\n"
+            f"F.I.O: {l['full_name']}\n"
+            f"Telefon: <code>{l['phone']}</code>\n"
+            f"Kurs: {l['course'] or 'Umumiy'}\n"
             f"---------------------------\n"
         )
     await message.answer(text, parse_mode="HTML")
 
-# --- FASTAPI SERVER ---
+async def start_bot():
+    await bot.delete_webhook(drop_pending_updates=True)
+    await dp.start_polling(bot, handle_signals=False)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    await bot.delete_webhook(drop_pending_updates=True)
-    polling_task = asyncio.create_task(dp.start_polling(bot, handle_signals=False))
-    print("⚡ Server va Bot 24/7 ishga tushdi...")
+    polling_task = asyncio.create_task(start_bot())
     yield
     polling_task.cancel()
     await bot.session.close()
@@ -102,10 +98,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Test uchun sahifa
 @app.get("/")
 def home():
-    return {"status": "ok", "message": "Server 24/7 ishlayapti"}
+    return {"status": "ok", "message": "Server 24/7 ishlamoqda"}
 
 class LeadSchema(BaseModel):
     full_name: str
@@ -113,11 +108,10 @@ class LeadSchema(BaseModel):
     email: str = ""
     course: str = ""
 
-# MINI APP'DAN ARIZANI QABUL QILISH VA TELEGRAMGA XABAR YUBORISH
 @app.post("/api/register")
 async def create_lead(lead: LeadSchema):
     if not lead.full_name or not lead.phone:
-        raise HTTPException(status_code=400, detail="Ism va telefon shart!")
+        raise HTTPException(status_code=400, detail="Ism va telefon kiritilishi shart.")
 
     conn = get_db()
     cursor = conn.cursor()
@@ -129,18 +123,32 @@ async def create_lead(lead: LeadSchema):
     new_id = cursor.lastrowid
     conn.close()
 
-    # Adminga Telegramdan to'g'ridan-to'g'ri bildirishnoma jo'natish
+    # Xabar to'g'ridan-to'g'ri 7636659881 ID profiliga yuboriladi:
     msg_text = (
-        f"🔔 <b>YANGI ARIZA KELIB TUSHDI! #{new_id}</b>\n\n"
-        f"👤 <b>Ism:</b> {lead.full_name}\n"
-        f"📞 <b>Telefon:</b> <code>{lead.phone}</code>\n"
-        f"✉️ <b>Email:</b> {lead.email or 'Kiritilmagan'}\n"
-        f"📚 <b>Tanlangan Kurs:</b> {lead.course or 'Umumiy'}\n"
+        f"<b>YANGI ARIZA QABUL QILINDI #{new_id}</b>\n\n"
+        f"F.I.O: {lead.full_name}\n"
+        f"Telefon: <code>{lead.phone}</code>\n"
+        f"Elektron pochta: {lead.email or 'Kiritilmagan'}\n"
+        f"Kurs: {lead.course or 'Umumiy'}\n"
     )
     try:
-        if ADMIN_TELEGRAM_ID:
-            await bot.send_message(chat_id=ADMIN_TELEGRAM_ID, text=msg_text, parse_mode="HTML")
+        await bot.send_message(chat_id=ADMIN_TELEGRAM_ID, text=msg_text, parse_mode="HTML")
     except Exception as e:
-        print("Xabar yuborishda xatolik:", e)
+        print("Telegramga yuborishda xatolik:", e)
 
     return {"status": "success", "id": new_id}
+
+@app.get("/api/admin/registrations")
+def get_leads():
+    conn = get_db()
+    leads = [dict(row) for row in conn.execute("SELECT * FROM leads ORDER BY id DESC").fetchall()]
+    conn.close()
+    return leads
+
+@app.delete("/api/admin/registrations/{lead_id}")
+def delete_lead(lead_id: int):
+    conn = get_db()
+    conn.execute("DELETE FROM leads WHERE id = ?", (lead_id,))
+    conn.commit()
+    conn.close()
+    return {"status": "deleted"}
